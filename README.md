@@ -3,6 +3,31 @@
 Compsys is a Typescript system architecture framework library. It is heavily
 inspired by Stuart Sierra's component library for Clojure.
 
+## Motivation
+
+The Javascript applications I've seen seem to suffer from a lack of
+architecture. The applications lack any encapsulation of and separation between
+phases of the application's existence, which leads to confused code paths,
+redundant code, ill-specified behaviors, bugs, etc.
+
+Moreover, side effects tend occur all over the place, both internal and
+external, which complicates testing, reduces the possibility of code reuse, and
+impedes analysis.
+
+Most applications can profitably be characterized by the following phases:
+
+1. Constructing configuration data from various sources, including the
+   filesystem, envirionment variables, command-line arguments, inspecting the
+   environment, calling services, etc.
+2. Validating the syntax of the configuration - not does the password work, but
+   is it a non-empty string
+3. Constructing a system of components that have well-defined interfaces behind
+   which all side effects occur
+4. Starting the system, at which point expensive resources are allocated,
+   network connections are established, ports are bound for listening, etc.
+5. Stopping the system, affording components the explicit opportunity to finish
+   work and clean up resources
+
 ## Design Goals
 
 * Provide a principled approach to system architecture
