@@ -1,0 +1,7 @@
+{
+  "name": "compsys",
+  "license": "MIT",
+  "dependencies": {
+    "dependency-graph": "^0.8.0"
+  }
+}
