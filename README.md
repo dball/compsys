@@ -25,7 +25,8 @@ functions that accept the system's Config and return a component.
 
 Components may have dependencies and lifecycles; such components are called
 actors and must implement the Actor interface to accept dependencies and receive
-lifecycle events. Dependencies are declared to roles.
+lifecycle events. Dependencies are declared to roles. (Note that the term actor
+here has no relation to the asynchronous actor model of computation.)
 
 Actors are started when the system starts, in the order implied by the
 dependency graph. Before actors with dependencies are started, they are supplied
