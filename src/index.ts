@@ -64,11 +64,12 @@ const isActor = (x: any): x is Actor => {
  */
 export class System implements Lifecycle<System> {
   private producers: DepGraph<Producer>;
-  private components: DepGraph<Component> | null;
+  private components: Map<Role,Component> | null;
   private config: Config;
 
   constructor(blueprint: Blueprint, config: Config) {
     this.producers = new DepGraph();
+    this.config = config;
     blueprint.producers.forEach(([producer, dependencies], role) => {
       this.producers.addNode(role, producer);
       dependencies.forEach(dependency => this.producers.addDependency(role, dependency));
@@ -82,14 +83,14 @@ export class System implements Lifecycle<System> {
   // TODO catch errors and attempt to shutdown partial system gracefully
   // TODO enforce timeout on the awaits?
   async start() {
-    this.components = new DepGraph<Component>();
+    this.components = new Map<Role,Component>();
     for (const role of this.producers.overallOrder()) {
       const producer = this.producers.getNodeData(role);
       const dependencies = this.producers.dependenciesOf(role);
       let component = typeof producer === 'function' ? producer(this.config) : producer;
       if (isActor(component)) {
         for (const dependency of dependencies) {
-          component = component.setDependency(dependency, this.components.getNodeData(dependency));
+          component = component.setDependency(dependency, this.components.get(dependency));
         }
         // TODO as a performance optimization, we could organize the graph into levels
         // and await all of each level's components simultaneously
@@ -99,7 +100,7 @@ export class System implements Lifecycle<System> {
           throw new Error('Only actors may have dependencies');
         }
       }
-      this.components.addNode(role, component);
+      this.setDependency(role, component);
     }
     return this;
   }
@@ -108,13 +109,18 @@ export class System implements Lifecycle<System> {
   // TODO enforce timeout on the awaits?
   async stop() {
     for (const role of this.producers.overallOrder().reverse()) {
-      const component = this.components.getNodeData(role);
+      const component = this.components.get(role);
       if (isActor(component)) {
         // TODO a similar performance optimization as above is possible
         await component.stop();
       }
     }
     this.components = null;
+    return this;
+  }
+
+  setDependency(role: string, component: Component) {
+    this.components.set(role, component);
     return this;
   }
 }
