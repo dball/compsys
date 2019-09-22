@@ -124,3 +124,5 @@ export class System implements Lifecycle<System> {
     return this;
   }
 }
+
+export const buildSystem = (blueprint: Blueprint, config: Config) => new System(blueprint, config);
