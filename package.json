@@ -1,6 +1,8 @@
 {
   "name": "compsys",
+  "version": "0.0.1",
   "license": "MIT",
+  "main": "src/index.ts",
   "dependencies": {
     "dependency-graph": "^0.8.0"
   }
