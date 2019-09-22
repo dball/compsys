@@ -1,0 +1,7 @@
+{
+  "name": "compsys-example",
+  "version": "0.0.1",
+  "dependencies": {
+    "compsys": "file:../"
+  }
+}
