@@ -46,6 +46,25 @@ export interface Actor extends Lifecycle<Actor> {
 }
 
 /**
+ * The BaseActor class provides an Actor implementation that has no
+ * start or stop activity and sets dependencies as mutable properties.
+ */
+export class BaseActor implements Actor {
+  async start() {
+    return this;
+  }
+
+  async stop() {
+    return this;
+  }
+
+  setDependency(role: Role, component: Component) {
+    this[role] = component;
+    return this;
+  }
+}
+
+/**
  * A Blueprint describes the composition of a system
  */
 export interface Blueprint {
@@ -74,7 +93,8 @@ export class System implements Lifecycle<System> {
       this.producers.addNode(role, producer);
       dependencies.forEach(dependency => this.producers.addDependency(role, dependency));
     });
-    const missingRoles = [...blueprint.roles.keys()].filter((role) => !this.producers.hasNode(role));
+    const declaredRoles = Array.from(blueprint.roles.keys());
+    const missingRoles = declaredRoles.filter((role) => !this.producers.hasNode(role));
     if (missingRoles.length > 0) {
       throw new Error('System blueprint contains missing roles: ' + missingRoles);
     }
