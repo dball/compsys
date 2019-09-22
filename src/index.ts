@@ -64,7 +64,7 @@ const isActor = (x: any): x is Actor => {
  */
 export class System implements Lifecycle<System> {
   private producers: DepGraph<Producer>;
-  private components: Map<Role,Component> | null;
+  private components: Map<Role, Component> | null;
   private config: Config;
 
   constructor(blueprint: Blueprint, config: Config) {
@@ -83,7 +83,7 @@ export class System implements Lifecycle<System> {
   // TODO catch errors and attempt to shutdown partial system gracefully
   // TODO enforce timeout on the awaits?
   async start() {
-    this.components = new Map<Role,Component>();
+    this.components = new Map<Role, Component>();
     for (const role of this.producers.overallOrder()) {
       const producer = this.producers.getNodeData(role);
       const dependencies = this.producers.dependenciesOf(role);

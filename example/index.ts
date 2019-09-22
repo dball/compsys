@@ -1,4 +1,5 @@
 import { Actor, buildSystem, Component, Config, Role } from 'compsys';
+import fs = require('fs');
 
 const defaultConfig = {
   web: {

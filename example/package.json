@@ -2,6 +2,7 @@
   "name": "compsys-example",
   "version": "0.0.1",
   "dependencies": {
+    "@types/node": "^12.7.5",
     "compsys": "file:../"
   }
 }

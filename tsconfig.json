@@ -1,0 +1,14 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "lib": [
+      "es2019"
+    ],
+    "sourceMap": true,
+    "outDir": "build",
+    "downlevelIteration": true
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}
