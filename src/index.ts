@@ -1,14 +1,18 @@
 import { DepGraph } from 'dependency-graph';
+import * as immutable from 'immutable';
 
 /**
  * A Value is any immutable type, simple or composite
  */
-type Value = any;
+type Value = null | boolean | number | string | RegExp | Date | ValueList | ValueSet | ValueMap;
+interface ValueList extends immutable.List<Value> { };
+interface ValueSet extends immutable.Set<Value> { };
+interface ValueMap extends immutable.Map<Value, Value> { };
 
 /**
  * A Config is a value that describes how a component behaves
  */
-export type Config = Value;
+export type Config = ValueMap;
 
 /**
  * Objects with Lifecycles can be started and stopped asynchronously
@@ -68,8 +72,8 @@ export class BaseActor implements Actor {
  * A Blueprint describes the composition of a system
  */
 export interface Blueprint {
-  roles: Map<Role, Description>;
-  producers: Map<Role, [Producer, Array<Role>]>;
+  roles: immutable.Map<Role, Description>;
+  producers: immutable.Map<Role, [Producer, immutable.Set<Role>]>;
 }
 
 const isActor = (x: any): x is Actor => {
@@ -83,7 +87,7 @@ const isActor = (x: any): x is Actor => {
  */
 export class System implements Lifecycle<System> {
   private producers: DepGraph<Producer>;
-  private components: Map<Role, Component> | null;
+  private components: immutable.Map<Role, Component> | null;
   private config: Config;
 
   constructor(blueprint: Blueprint, config: Config) {
@@ -103,7 +107,7 @@ export class System implements Lifecycle<System> {
   // TODO catch errors and attempt to shutdown partial system gracefully
   // TODO enforce timeout on the awaits?
   async start() {
-    this.components = new Map<Role, Component>();
+    this.components = immutable.Map<Role, Component>();
     for (const role of this.producers.overallOrder()) {
       const producer = this.producers.getNodeData(role);
       const dependencies = this.producers.dependenciesOf(role);
@@ -140,9 +144,16 @@ export class System implements Lifecycle<System> {
   }
 
   setDependency(role: string, component: Component) {
-    this.components.set(role, component);
+    this.components = this.components.set(role, component);
     return this;
   }
 }
 
-export const buildSystem = (blueprint: Blueprint, config: Config) => new System(blueprint, config);
+export const buildSystem = (blueprint: any, config: any) => {
+  const myBlueprint = {
+    roles: immutable.fromJS(blueprint.roles),
+    producers: immutable.fromJS(blueprint.producers.filter)
+  };
+  const myConfig = immutable.fromJS(config);
+  return new System(myBlueprint, myConfig);
+};

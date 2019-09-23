@@ -2,8 +2,12 @@
   "name": "compsys",
   "version": "0.0.1",
   "license": "MIT",
-  "main": "src/index.ts",
+  "main": "build/index.js",
+  "typescript": {
+    "definition": "build/index.d.ts"
+  },
   "dependencies": {
-    "dependency-graph": "^0.8.0"
+    "dependency-graph": "^0.8.0",
+    "immutable": "^4.0.0-rc.12"
   }
 }

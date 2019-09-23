@@ -1,6 +1,11 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
-    "outDir": "build"
-  }
+    "outDir": "build",
+    "sourceMap": true,
+    "target": "es2019"
+  },
+  "include": [
+    "./src/**/*"
+  ]
 }

@@ -83,7 +83,8 @@ class WebServer extends BaseActor {
 
   constructor(config: Config) {
     super();
-    // TODO construct
+    this.port = config.getIn(['web', 'port']);
+    this.scheme = config.getIn(['web', 'scheme']);
   }
 
   // TODO lifecycle
@@ -106,9 +107,10 @@ const sensibleDefaultBlueprint = {
 
 const buildLocalSystem = (config: Config) => {
   const blueprint = { ...sensibleDefaultBlueprint };
-  blueprint.producers.fs = { producer: buildRealFilesystem };
-  blueprint.producers.db = {
+  blueprint.producers['fs'] = { producer: buildRealFilesystem };
+  blueprint.producers['db'] = {
     producer: () => new JsonFileDatabase<Article>('data', isArticle),
     dependencies: ['fs']
   };
+  return buildSystem(blueprint, config);
 };

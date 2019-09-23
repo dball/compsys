@@ -1,8 +1,9 @@
 {
   "name": "compsys-example",
+  "main": "build/index.js",
   "version": "0.0.1",
   "dependencies": {
     "@types/node": "^12.7.5",
-    "compsys": "file:../"
+    "compsys": "file:.."
   }
 }
