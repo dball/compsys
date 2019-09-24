@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "build",
     "sourceMap": true,
-    "target": "es2019"
+    "target": "es2019",
+    "module": "commonjs"
   },
   "include": [
     "./src/**/*"
