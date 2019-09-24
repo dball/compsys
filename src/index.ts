@@ -1,31 +1,27 @@
 import { DepGraph } from 'dependency-graph';
-import * as immutable from 'immutable';
-
-/**
- * A Value is any immutable type, simple or composite
- */
-type Value = null | boolean | number | string | RegExp | Date | ValueList | ValueSet | ValueMap;
-interface ValueList extends immutable.List<Value> { };
-interface ValueSet extends immutable.Set<Value> { };
-interface ValueMap extends immutable.Map<Value, Value> { };
 
 /**
  * A Config is a value that describes how a component behaves
  */
-export type Config = ValueMap;
+export type Config = any;
+
+export const start = Symbol('start');
+export const stop = Symbol('stop');
+export const inject = Symbol('inject');
 
 /**
  * Objects with Lifecycles can be started and stopped asynchronously
+ * and return promises of themselves to allow for immutable instances
  */
 interface Lifecycle<T> {
-  start(): Promise<T>;
-  stop(): Promise<T>;
+  [start](): Promise<T>;
+  [stop](): Promise<T>;
 }
 
 /**
  * A Role describes the part a component plays within a system
  */
-export type Role = string;
+type Role = string;
 
 /**
  * A Description documents the purpose of a role
@@ -35,7 +31,7 @@ type Description = string;
 /**
  * A Component is a piece of a system that plays a role
  */
-export type Component = any;
+type Component = any;
 
 /**
  * A Producer constructs a Component from a Config value
@@ -46,7 +42,7 @@ type Producer = (config: Config) => Component;
  * An Actor is a Component that has a Lifecycle and dependencies
  */
 export interface Actor extends Lifecycle<Actor> {
-  setDependency(role: Role, component: Component): Actor;
+  [inject](role: Role, component: Component): Actor;
 }
 
 /**
@@ -54,15 +50,15 @@ export interface Actor extends Lifecycle<Actor> {
  * start or stop activity and sets dependencies as mutable properties.
  */
 export class BaseActor implements Actor {
-  async start() {
+  async [start]() {
     return this;
   }
 
-  async stop() {
+  async [stop]() {
     return this;
   }
 
-  setDependency(role: Role, component: Component) {
+  [inject](role: Role, component: Component) {
     this[role] = component;
     return this;
   }
@@ -72,8 +68,8 @@ export class BaseActor implements Actor {
  * A Blueprint describes the composition of a system
  */
 export interface Blueprint {
-  roles: immutable.Map<Role, Description>;
-  producers: immutable.Map<Role, [Producer, immutable.Set<Role>]>;
+  roles: Map<Role, Description>;
+  producers: Map<Role, { producer: Producer, dependencies: Set<Role> }>;
 }
 
 const isActor = (x: any): x is Actor => {
@@ -81,13 +77,15 @@ const isActor = (x: any): x is Actor => {
   return typeof x === 'object' && x.start && x.stop;
 };
 
+// MARK
+
 /**
  * A System is a graph of components that can depend on each other and be
  * started and stopped
  */
 export class System implements Lifecycle<System> {
   private producers: DepGraph<Producer>;
-  private components: immutable.Map<Role, Component> | null;
+  private components: Map<Role, Component> | null;
   private config: Config;
 
   constructor(blueprint: Blueprint, config: Config) {
