@@ -66,6 +66,7 @@ export class BaseActor implements Actor {
 /**
  * A Blueprint describes the composition of a system
  */
+// TODO we could declare lifecycle timeouts to provide for bounded start and stop guarantees
 export interface Blueprint {
   roles: Map<Role, Description>;
   components: Map<Role, { component: Component, dependencies: Set<Role> }>;
