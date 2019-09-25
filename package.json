@@ -7,7 +7,6 @@
     "definition": "build/index.d.ts"
   },
   "dependencies": {
-    "dependency-graph": "^0.8.0",
-    "immutable": "^4.0.0-rc.12"
+    "dependency-graph": "^0.8.0"
   }
 }

@@ -1,22 +1,11 @@
-import { Actor, BaseActor, buildSystem, Component, Config, Role } from 'compsys';
+import * as sys from 'compsys';
 import * as fs from 'fs';
-
-const defaultConfig = {
-  web: {
-    port: 8888,
-    scheme: 'http',
-  },
-  db: {
-    type: 'file',
-    path: 'data',
-  }
-};
+import * as im from 'immutable';
+import * as http from 'http';
 
 interface Clock {
   now(): Date;
 }
-
-const buildSystemClock: () => Clock = () => ({ now: () => new Date(), });
 
 interface Filesystem {
   readdir(path: string): Promise<Array<string>>;
@@ -35,13 +24,11 @@ class RealFilesystem implements Filesystem {
   }
 }
 
-const buildRealFilesystem = () => new RealFilesystem;
-
 interface Database<T> {
   list(): Promise<Array<T>>;
 }
 
-class JsonFileDatabase<T> extends BaseActor implements Database<T> {
+class JsonFileDatabase<T> extends sys.BaseActor implements Database<T> {
   private dir: string;
   private guard: (x: any) => x is T;
   private fs: Filesystem;
@@ -57,12 +44,7 @@ class JsonFileDatabase<T> extends BaseActor implements Database<T> {
     const jsonFilenames = filenames.filter((filename) => filename.match(/\.json$/));
     const jsonFiles = await Promise.all(jsonFilenames.map(this.fs.readfile));
     const contents = jsonFiles.map(data => JSON.parse(data));
-    if (this.guard) {
-      return contents.filter(this.guard);
-    } else {
-      // TODO why don't we need to assert this type as Array<T> ?
-      return contents;
-    }
+    return this.guard ? contents.filter(this.guard) : contents;
   }
 }
 
@@ -73,44 +55,64 @@ interface Article {
 }
 
 const isArticle = (article: any): article is Article =>
-  typeof article == 'object' && article.id && article.title && article.body;
+  typeof article === 'object' && article.id && article.title && article.body;
 
-class WebServer extends BaseActor {
+class WebServer extends sys.BaseActor {
   private port: number;
   private scheme: 'http' | 'https';
   private db: any;
   private clock: any;
 
-  constructor(config: Config) {
+  constructor(port: number, scheme: 'http' | 'https') {
     super();
-    this.port = config.getIn(['web', 'port']);
-    this.scheme = config.getIn(['web', 'scheme']);
+    this.port = port;
+    this.scheme = scheme;
   }
 
   // TODO lifecycle
 }
 
-const buildWebServer = (config: Config) => new WebServer(config);
+const defaultConfig = im.fromJS({
+  web: {
+    port: 8888,
+    scheme: 'http',
+  },
+  db: {
+    path: 'data',
+  }
+});
 
-const sensibleDefaultBlueprint = {
+const buildDefaultBlueprint = (config: any) => im.fromJS({
   roles: {
     clock: 'Observes the current time',
     db: 'Manages persistent structured data',
     fs: 'Manages persistent files',
     web: 'Handles incoming requests',
   },
-  producers: {
-    clock: { producer: buildSystemClock },
-    web: { producer: buildWebServer, dependencies: ['clock', 'db'] },
+  components: {
+    clock: {
+      component: { now: () => new Date() },
+    },
+    web: {
+      component: new WebServer(config.getIn(['web', 'port']), config.getIn(['web', 'scheme'])),
+      dependencies: ['clock', 'db'],
+    },
   },
-};
+});
 
-const buildLocalSystem = (config: Config) => {
-  const blueprint = { ...sensibleDefaultBlueprint };
-  blueprint.producers['fs'] = { producer: buildRealFilesystem };
-  blueprint.producers['db'] = {
-    producer: () => new JsonFileDatabase<Article>('data', isArticle),
-    dependencies: ['fs']
-  };
-  return buildSystem(blueprint, config);
+const buildLocalSystem = (config: any) => {
+  const localConfig = defaultConfig.deepMerge(im.fromJS(config));
+  const localBlueprint = im.fromJS({
+    components: {
+      fs: {
+        component: new RealFilesystem(),
+      },
+      db: {
+        component: new JsonFileDatabase<Article>(localConfig.getIn(['db', 'path']), isArticle),
+        dependencies: ['clock', 'fs'],
+      },
+    }
+  });
+  const blueprint = buildDefaultBlueprint(localConfig).deepMerge(localBlueprint);
+  return sys.buildSystem(blueprint.toJS());
 };

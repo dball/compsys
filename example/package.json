@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "dependencies": {
     "@types/node": "^12.7.5",
-    "compsys": "file:.."
+    "compsys": "file:..",
+    "immutable": "^4.0.0-rc.12"
   }
 }
