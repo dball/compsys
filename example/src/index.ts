@@ -100,8 +100,8 @@ const buildDefaultBlueprint = (config: any) => im.fromJS({
   },
 });
 
-const buildLocalSystem = (config: any) => {
-  const localConfig = defaultConfig.deepMerge(im.fromJS(config));
+export const buildLocalSystem = (config: any) => {
+  const localConfig = defaultConfig.mergeDeep(im.fromJS(config));
   const localBlueprint = im.fromJS({
     components: {
       fs: {
@@ -113,6 +113,6 @@ const buildLocalSystem = (config: any) => {
       },
     }
   });
-  const blueprint = buildDefaultBlueprint(localConfig).deepMerge(localBlueprint);
+  const blueprint = buildDefaultBlueprint(localConfig).mergeDeep(localBlueprint);
   return sys.buildSystem(blueprint.toJS());
 };

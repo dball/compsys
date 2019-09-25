@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "dependency-graph": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.7"
   }
 }

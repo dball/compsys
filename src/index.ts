@@ -89,11 +89,12 @@ export class System implements Lifecycle<System> {
 
   constructor(blueprint: Blueprint) {
     this.components = new DepGraph<Component>();
+    [...blueprint.roles.keys()].forEach(role => this.components.addNode(role));
     blueprint.components.forEach(({ component, dependencies }, role) => {
-      if (isActor(component) && dependencies.size !== 0) {
+      if (!isActor(component) && dependencies.size !== 0) {
         throw new Error('Only actors may have dependencies');
       }
-      this.components.addNode(role, component);
+      this.components.setNodeData(role, component);
       dependencies.forEach(dependency => this.components.addDependency(role, dependency));
     });
     const declaredRoles = Array.from(blueprint.roles.keys());
@@ -146,4 +147,16 @@ export class System implements Lifecycle<System> {
   }
 }
 
-export const buildSystem = (blueprint: Blueprint) => new System(blueprint);
+export const buildSystem = (blueprint: any) => {
+  const myBlueprint: Blueprint = {
+    roles: new Map(Object.entries(blueprint.roles)),
+    components: new Map(Object.entries(blueprint.components).map((entry: any) => {
+      const [role, { component, dependencies }] = entry;
+      return [role, { component: component, dependencies: new Set(dependencies) }]
+    }))
+  };
+  return new System(myBlueprint);
+};
+
+export const startSystem = async (system: System) => system[start]();
+export const stopSystem = async (system: System) => system[stop]();
