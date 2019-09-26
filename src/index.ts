@@ -145,6 +145,11 @@ export class System implements Lifecycle<System> {
     }
     return this;
   }
+
+  // Since we own this class, we can freely use the sensibly expected field names
+  async start() { return this[start](); }
+  async stop() { return this[stop](); }
+
 }
 
 export const buildSystem = (blueprint: any) => {
