@@ -45,7 +45,6 @@ class EdnFileDatabase<T> extends sys.Actor implements Database<T> {
     const ednFilenames = filenames.filter((filename) => filename.match(/\.edn$/));
     const ednFiles = await Promise.all(ednFilenames.map(this.fs.readfile));
     const contents = ednFiles.map(data => edn.toJS(edn.parse(data)));
-    console.log("contents" + JSON.stringify(contents));
     return this.guard ? contents.filter(this.guard) : contents;
   }
 }
