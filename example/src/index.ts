@@ -28,7 +28,7 @@ interface Database<T> {
   list(): Promise<Array<T>>;
 }
 
-class JsonFileDatabase<T> extends sys.BaseActor implements Database<T> {
+class JsonFileDatabase<T> extends sys.Actor implements Database<T> {
   private dir: string;
   private guard: (x: any) => x is T;
   private fs: Filesystem;
@@ -57,7 +57,7 @@ interface Article {
 const isArticle = (article: any): article is Article =>
   typeof article === 'object' && article.id && article.title && article.body;
 
-class WebServer extends sys.BaseActor {
+class WebServer extends sys.Actor {
   private port: number;
   private scheme: 'http';
   private db: Database<Article>;

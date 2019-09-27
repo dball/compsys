@@ -38,25 +38,17 @@ type Description = string;
 type Component = any;
 
 /**
- * An Actor is a Component that has a Lifecycle and dependencies
+ * An Depender is a Component that has dependencies
  */
-export interface Actor extends Lifecycle<Actor> {
-  [inject](role: Role, component: Component): Actor;
+export interface Depender {
+  [inject](role: Role, component: Component): Depender;
 }
 
 /**
- * The BaseActor class provides an Actor implementation that has no
- * start or stop activity and sets dependencies as mutable properties.
+ * The Actor class implements a Depender that stores components in mutable
+ * fields.
  */
-export class BaseActor implements Actor {
-  async [start]() {
-    return this;
-  }
-
-  async [stop]() {
-    return this;
-  }
-
+export class Actor implements Depender {
   [inject](role: Role, component: Component) {
     this[role] = component;
     return this;
@@ -73,12 +65,20 @@ export interface Blueprint {
 }
 
 /**
- * Actor type guard
+ * Depender type guard
  * @param x
  */
-const isActor = (x: any): x is Actor => {
-  return typeof x === 'object' && x[start] && x[stop];
+const isDepender = (x: any): x is Depender => {
+  return typeof x === 'object' && x[inject];
 };
+
+/**
+ * Lifecycle type guard
+ * @param x
+ */
+const hasLifecycle = <T>(x: any): x is Lifecycle<T> => {
+  return typeof x === 'object' && x[start] && x[stop];
+}
 
 /**
  * A System is a graph of components that can depend on each other and be
@@ -91,8 +91,8 @@ export class System implements Lifecycle<System> {
     this.components = new DepGraph<Component>();
     [...blueprint.roles.keys()].forEach(role => this.components.addNode(role));
     blueprint.components.forEach(({ component, dependencies }, role) => {
-      if (!isActor(component) && dependencies.size !== 0) {
-        throw new Error('Only actors may have dependencies');
+      if (!isDepender(component) && dependencies.size !== 0) {
+        throw new Error('Only dependers may have dependencies');
       }
       this.components.setNodeData(role, component);
       dependencies.forEach(dependency => this.components.addDependency(role, dependency));
@@ -110,19 +110,21 @@ export class System implements Lifecycle<System> {
     for (const role of this.components.overallOrder()) {
       const component = this.components.getNodeData(role);
       const dependencies = this.components.dependenciesOf(role);
-      if (isActor(component)) {
-        let actor = component as Actor;
+      if (isDepender(component)) {
+        let depender = component as Depender;
         for (const dependency of dependencies) {
-          actor = actor[inject](dependency, this.components.getNodeData(dependency));
+          depender = depender[inject](dependency, this.components.getNodeData(dependency));
         }
+      }
+      if (hasLifecycle(component)) {
         // TODO as a performance optimization, we could organize the graph into levels
         // and await all of each level's components simultaneously
-        actor = await component[start]();
-        // The actor may now be a new instance, so we'll replace the original
+        //
+        // The component may now be a new instance, so we'll replace the original
         // Note we could reasonably store the original, in case we are in the immutable
         // case and we would like to reset even if something goes wrong in start or stop
         // but it's not worth doing unless it's worth doing
-        this.components.setNodeData(role, actor);
+        this.components.setNodeData(role, await component[start]());
       }
     }
     return this;
@@ -133,14 +135,13 @@ export class System implements Lifecycle<System> {
   async [stop]() {
     for (const role of this.components.overallOrder().reverse()) {
       const component = this.components.getNodeData(role);
-      if (isActor(component)) {
+      if (hasLifecycle(component)) {
         // TODO a similar performance optimization as above is possible
-        let actor = component as Actor;
-        actor = await actor[stop]();
+        //
         // We could clear the dependencies now for symmetry and to free resources, but
         // it would cost time and would impede debugging, so we'll let them hang out
         // in the system instance
-        this.components.setNodeData(role, actor);
+        this.components.setNodeData(role, await component[stop]());
       }
     }
     return this;
@@ -162,6 +163,3 @@ export const buildSystem = (blueprint: any) => {
   };
   return new System(myBlueprint);
 };
-
-export const startSystem = async (system: System) => system[start]();
-export const stopSystem = async (system: System) => system[stop]();
