@@ -2,6 +2,7 @@ import * as sys from 'compsys';
 import * as fs from 'fs';
 import * as im from 'immutable';
 import * as http from 'http';
+import edn = require('jsedn');
 
 interface Clock {
   now(): Date;
@@ -28,7 +29,7 @@ interface Database<T> {
   list(): Promise<Array<T>>;
 }
 
-class JsonFileDatabase<T> extends sys.Actor implements Database<T> {
+class EdnFileDatabase<T> extends sys.Actor implements Database<T> {
   private dir: string;
   private guard: (x: any) => x is T;
   private fs: Filesystem;
@@ -41,21 +42,23 @@ class JsonFileDatabase<T> extends sys.Actor implements Database<T> {
 
   async list(): Promise<Array<T>> {
     const filenames = await this.fs.readdir(this.dir);
-    const jsonFilenames = filenames.filter((filename) => filename.match(/\.json$/));
-    const jsonFiles = await Promise.all(jsonFilenames.map(this.fs.readfile));
-    const contents = jsonFiles.map(data => JSON.parse(data));
+    const ednFilenames = filenames.filter((filename) => filename.match(/\.edn$/));
+    const ednFiles = await Promise.all(ednFilenames.map(this.fs.readfile));
+    const contents = ednFiles.map(data => edn.toJS(edn.parse(data)));
+    console.log("contents" + JSON.stringify(contents));
     return this.guard ? contents.filter(this.guard) : contents;
   }
 }
 
 interface Article {
   id: string,
+  created_at: Date,
   title: string,
   body: string
 }
 
 const isArticle = (article: any): article is Article =>
-  typeof article === 'object' && article.id && article.title && article.body;
+  typeof article === 'object' && article.id && article.created_at && article.title && article.body;
 
 class WebServer extends sys.Actor {
   private port: number;
@@ -123,7 +126,7 @@ export const buildLocalSystem = (config: any) => {
         component: new RealFilesystem(),
       },
       db: {
-        component: new JsonFileDatabase<Article>(localConfig.getIn(['db', 'path']), isArticle),
+        component: new EdnFileDatabase<Article>(localConfig.getIn(['db', 'path']), isArticle),
         dependencies: ['clock', 'fs'],
       },
     }
