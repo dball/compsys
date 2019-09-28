@@ -5,8 +5,8 @@ import * as http from 'http';
 import edn = require('jsedn');
 
 // Compsys suggests expressing all side effects and other impure calls within
-// components. This being typescript, we can go further and provide types for
-// the components' interfaces.
+// components. This example being typescript, we can go further and provide
+// types for the components' interfaces to clarify the contract.
 
 // In a real system, complex implementations probably would want to be
 // in modules of their own, if only to limit the requires in this module.
@@ -16,6 +16,8 @@ import edn = require('jsedn');
 // custom interface for a e.g. sql server if you're really using relational
 // algebra and explicit transactions.
 
+
+
 // But yes, really, we do want an interface wrapper for the system clock. Tests
 // that want to say things about the system behavior over at least the time it
 // observed via this interface in any way will thank you with their determinism
@@ -23,6 +25,8 @@ import edn = require('jsedn');
 interface Clock {
   now(): Date;
 }
+
+
 
 // Yes, really, an interface for the Filesystem. Filesystem interfaces are
 // gigantic but we generally only use a handful of fns in our applications so
@@ -46,6 +50,8 @@ class RealFilesystem implements Filesystem {
       fs.readFile(path, (err, data) => !err ? resolve(data.toString()) : reject(err)));
   }
 }
+
+
 
 // It's not much a database, really.
 interface Database<T> {
@@ -79,6 +85,12 @@ class EdnFileDatabase<T> extends sys.Actor implements Database<T> {
   }
 }
 
+
+
+// There's nothing component-y about this interface, I just thought it'd be nice
+// to have the database interface type checked. I'm not sure how much this
+// really buys us though. I'm tending to like types for api contracts, but find
+// them wanting for data contracts.
 interface Article {
   id: string,
   created_at: Date,
@@ -86,8 +98,8 @@ interface Article {
   body: string
 }
 
-// Sure would be cool if Typescript could generate type guards, or if types
-// existed at runtime so we could do it.
+// On that note, sure would be cool if Typescript could generate type guards, or
+// if types existed at runtime so we could do it.
 const isArticle = (article: any): article is Article =>
   typeof article === 'object' && article.id && article.created_at && article.title && article.body;
 
