@@ -4,7 +4,7 @@ import * as im from 'immutable';
 import * as http from 'http';
 import edn = require('jsedn');
 
-// Compsys suggests expressing all side effects other impure calls within
+// Compsys suggests expressing all side effects and other impure calls within
 // components. This being typescript, we can go further and provide types for
 // the components' interfaces.
 
