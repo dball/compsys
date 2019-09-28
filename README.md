@@ -1,7 +1,8 @@
 # Compsys
 
 Compsys is a Typescript system architecture framework library. It is heavily
-inspired by [Stuart Sierra's component library for Clojure](https://github.com/stuartsierra/component).
+inspired by [Stuart Sierra's component library for
+Clojure](https://github.com/stuartsierra/component).
 
 ## Components
 
@@ -22,6 +23,11 @@ or stopped values, allowing for immutable components. Components with lifecycles
 must have properties for the module's `start` and `stop` symbols, whose values
 are async functions of no arguments which must return the component in its new
 state.
+
+## Usage
+
+There is an [example blog server](example/src/index.ts) that includes
+explanatory and polemic commentary.
 
 ## Motivation
 
@@ -63,6 +69,20 @@ three steps.
 * Use of the library should be able to write idiomatic Javascript using normal
   mutable objects and method signatures
 * The library should have as few dependencies as possible
+
+## Tradeoffs
+
+Expressing a component system can be a bit more code than building a system
+piecemeal. Writing interfaces and component implementations and builders for the
+various configurations of systems has a cost.
+
+On the other hand, the construction of a component system tends to be code
+that's well-structured and easy to follow. Thinking about interfaces and
+components helps clarify the system's needs. Well-written coherent mock
+components can facilitate fast, broad test coverage at various levels of
+coupling, and can be induced to fail in ways that can be hard, slow, or simply
+unreliable to do with production components. Abstract components can swap
+production implementations to faciliate migrations.
 
 ## License
 
