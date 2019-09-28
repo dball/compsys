@@ -1,7 +1,7 @@
 # Compsys
 
 Compsys is a Typescript system architecture framework library. It is heavily
-inspired by Stuart Sierra's component library for Clojure.
+inspired by [Stuart Sierra's component library for Clojure](https://github.com/stuartsierra/component).
 
 ## Components
 

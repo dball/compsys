@@ -2,9 +2,26 @@
   "name": "compsys",
   "version": "0.0.1",
   "license": "MIT",
-  "main": "build/index.js",
+  "main": "lib/index.js",
+  "author": {
+    "email": "donald.ball@gmail.com",
+    "name": "Donald Ball"
+  },
+  "description": "Provides a lifecycle and dependency system",
+  "keywords": [
+    "system",
+    "component",
+    "dependency",
+    "lifecycle",
+    "architecture"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dball/compsys.git"
+  },
+  "types": "lib/index.d.ts",
   "typescript": {
-    "definition": "build/index.d.ts"
+    "definition": "lib/index.d.ts"
   },
   "dependencies": {
     "dependency-graph": "^0.8.0"

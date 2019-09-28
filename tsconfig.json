@@ -7,7 +7,7 @@
     ],
     "module": "commonjs",
     "sourceMap": true,
-    "outDir": "build",
+    "outDir": "lib",
     "downlevelIteration": true,
     "target": "es2019"
   },

@@ -1,7 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
-    "outDir": "build",
+    "outDir": "lib",
     "sourceMap": true,
     "target": "es2019",
     "module": "commonjs"
