@@ -1,0 +1,11 @@
+{
+  "name": "compsys-example-2",
+  "main": "lib/index.js",
+  "version": "0.0.1",
+  "dependencies": {
+    "@types/node": "^12.7.5",
+    "compsys": "file:../..",
+    "immutable": "^4.0.0-rc.12",
+    "jsedn": "^0.4.1"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "outDir": "lib",
+    "sourceMap": true,
+    "target": "es2019",
+    "module": "commonjs"
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}
