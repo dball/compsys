@@ -58,6 +58,17 @@ export class TransientMessageBus<T extends Topic> implements MessageBus<T> {
   }
 }
 
+/** System topics */
+
+const clockTicks = Symbol('clock');
+
+type ClockTickTopic = {
+  id: typeof clockTicks,
+  type: number
+};
+
+type TrainerTopics = ClockTickTopic;
+
 /**
  * Scheduler
  */
@@ -82,13 +93,6 @@ type State = im.Record<{
   schedule: Schedule,
   time: Time
 }>;
-
-const clockTicks = Symbol('clock');
-
-type ClockTickTopic = {
-  id: typeof clockTicks,
-  type: number
-};
 
 class IntervalStopwatch extends sys.Actor {
   private ms: number;
@@ -120,7 +124,39 @@ class IntervalStopwatch extends sys.Actor {
   }
 }
 
-const buildSystem = () =>
+class Executor extends sys.Actor {
+  private messenger: MessageBus<ClockTickTopic>;
+  private scheduler: Scheduler;
+  private speaker: Speaker;
+
+  private schedule: Schedule;
+
+  constructor() {
+    super();
+  }
+
+  async [sys.start]() {
+    this.messenger.subscribe(clockTicks, this.tick);
+    this.schedule = await this.scheduler.getSchedule();
+    return this;
+  }
+
+  async [sys.stop]() {
+    this.messenger.unsubscribe(clockTicks, this.tick);
+    this.schedule = null;
+    return this;
+  }
+
+  async tick(tick: number): Promise<boolean> {
+    const exercise = this.schedule.get(tick);
+    if (exercise != null) {
+      await this.speaker.say(exercise);
+    }
+    return true;
+  }
+}
+
+export const buildSystem = () =>
   im.fromJS({
     roles: {
       executor: 'Executes the effects of various events',
@@ -131,11 +167,11 @@ const buildSystem = () =>
     },
     components: {
       executor: {
-        component: {},
-        dependencies: ['messenger', 'scheduler', 'speaker', 'stopwatch']
+        component: new Executor(),
+        dependencies: ['messenger', 'scheduler', 'speaker']
       },
       messenger: {
-        component: new TransientMessageBus<any>(),
+        component: new TransientMessageBus<TrainerTopics>(),
       },
       scheduler: {
         component: { getSchedule: async () => im.OrderedMap({}) },
@@ -149,5 +185,3 @@ const buildSystem = () =>
       },
     },
   });
-
-const system = buildSystem();
