@@ -27,7 +27,7 @@ interface MessageBus<T extends Topic> {
 }
 
 export class TransientMessageBus<T extends Topic> implements MessageBus<T> {
-  private subscriptions: im.Map<Symbol, im.List<(message: any) => Promise<any>>>;
+  private subscriptions: im.Map<Symbol, im.OrderedSet<(message: any) => Promise<any>>>;
 
   async publish<S extends T['id']>(
     topic: S,
@@ -44,7 +44,7 @@ export class TransientMessageBus<T extends Topic> implements MessageBus<T> {
     consumer: (message: TopicType<T, S>) => Promise<boolean>
   ): Promise<boolean> {
     this.subscriptions =
-      this.subscriptions.update(topic, (consumers) => (consumers || im.List()).push(consumer);
+      this.subscriptions.update(topic, (consumers) => (consumers || im.OrderedSet()).add(consumer));
     return true;
   }
 
@@ -52,9 +52,8 @@ export class TransientMessageBus<T extends Topic> implements MessageBus<T> {
     topic: S,
     consumer: (message: TopicType<T, S>) => Promise<boolean>
   ): Promise<boolean> {
-    // TODO actually do it ha ha
     this.subscriptions =
-      this.subscriptions.update(topic, (consumers) => consumers);
+      this.subscriptions.update(topic, (consumers) => (consumers || im.OrderedSet()).delete(consumer));
     return true;
   }
 }
@@ -84,20 +83,70 @@ type State = im.Record<{
   time: Time
 }>;
 
+const clockTicks = Symbol('clock');
+
+type ClockTickTopic = {
+  id: typeof clockTicks,
+  type: number
+};
+
+class IntervalStopwatch extends sys.Actor {
+  private ms: number;
+  private timeout: any;
+  private messenger: MessageBus<ClockTickTopic>;
+  private ticks: number;
+
+  constructor(ms: number) {
+    super();
+    this.ms = ms;
+    this.ticks = 0;
+  }
+
+  tick(): void {
+    const ticks = this.ticks;
+    this.ticks += 1;
+    this.messenger.publish(clockTicks, ticks);
+  }
+
+  async [sys.start](): Promise<this> {
+    this.timeout = setInterval(this.tick, this.ms);
+    return this;
+  }
+
+  async [sys.stop](): Promise<this> {
+    clearInterval(this.timeout);
+    this.timeout = null;
+    return this;
+  }
+}
+
 const buildSystem = () =>
   im.fromJS({
     roles: {
-      clock: 'Observes the current time',
+      executor: 'Executes the effects of various events',
+      messenger: 'Delivers messages',
       scheduler: 'Renders the exercise schedule',
       speaker: 'Utters messages',
-      state: 'Manages the system state'
+      stopwatch: 'Reports the time at regular intervals',
     },
     components: {
-      clock: {
-        component: { now: () => new Date() },
-        scheduler: { getSchedule: async () => im.OrderedMap({}) },
-        speaker: { say: async (message: string) => console.log(message) }
-      }
+      executor: {
+        component: {},
+        dependencies: ['messenger', 'scheduler', 'speaker', 'stopwatch']
+      },
+      messenger: {
+        component: new TransientMessageBus<any>(),
+      },
+      scheduler: {
+        component: { getSchedule: async () => im.OrderedMap({}) },
+      },
+      speaker: {
+        component: { say: async (message: string) => console.log(message) },
+      },
+      stopwatch: {
+        component: new IntervalStopwatch(1000),
+        dependencies: ['messenger']
+      },
     },
   });
 
