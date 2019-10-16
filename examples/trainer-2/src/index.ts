@@ -27,7 +27,11 @@ interface MessageBus<T extends Topic> {
 }
 
 export class TransientMessageBus<T extends Topic> implements MessageBus<T> {
-  private subscriptions: im.Map<Symbol, im.OrderedSet<(message: any) => Promise<any>>>;
+  private subscriptions: im.Map<Symbol, im.OrderedSet<(message: any) => Promise<boolean>>>;
+
+  constructor() {
+    this.subscriptions = im.Map();
+  }
 
   async publish<S extends T['id']>(
     topic: S,
@@ -113,7 +117,7 @@ class IntervalStopwatch extends sys.Actor {
   }
 
   async [sys.start](): Promise<this> {
-    this.timeout = setInterval(this.tick, this.ms);
+    this.timeout = setInterval(() => this.tick(), this.ms);
     return this;
   }
 
@@ -136,7 +140,7 @@ class Executor extends sys.Actor {
   }
 
   async [sys.start]() {
-    this.messenger.subscribe(clockTicks, this.tick);
+    this.messenger.subscribe(clockTicks, (tick) => this.tick(tick));
     this.schedule = await this.scheduler.getSchedule();
     return this;
   }
@@ -156,8 +160,8 @@ class Executor extends sys.Actor {
   }
 }
 
-export const buildSystem = () =>
-  im.fromJS({
+export const buildSystem = () => {
+  const blueprint = {
     roles: {
       executor: 'Executes the effects of various events',
       messenger: 'Delivers messages',
@@ -174,7 +178,7 @@ export const buildSystem = () =>
         component: new TransientMessageBus<TrainerTopics>(),
       },
       scheduler: {
-        component: { getSchedule: async () => im.OrderedMap({}) },
+        component: { getSchedule: async () => im.OrderedMap([[0, 'hi'], [5, 'bye']]) },
       },
       speaker: {
         component: { say: async (message: string) => console.log(message) },
@@ -184,4 +188,8 @@ export const buildSystem = () =>
         dependencies: ['messenger']
       },
     },
-  });
+  };
+  return sys.buildSystem(blueprint);
+};
+
+export const system = buildSystem();
