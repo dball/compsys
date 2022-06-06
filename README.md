@@ -26,7 +26,7 @@ state.
 
 ## Usage
 
-There is an [example blog server](example/src/index.ts) that includes
+There is an [example blog server](examples/blog-1/src/index.ts) that includes
 explanatory and polemic commentary.
 
 ## Motivation
